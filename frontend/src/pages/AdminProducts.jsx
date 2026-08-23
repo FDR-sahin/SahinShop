@@ -17,9 +17,24 @@ const emptyForm = {
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState(null);
+
+  // ===============================
+  // FILTER STATE
+  // ===============================
+  const [filters, setFilters] = useState({
+    search: "",
+    category: "",
+    minPrice: "",
+    maxPrice: "",
+    status: "",
+    sortBy: "newest",
+    stock_lt: "", 
+    discount_gt: "", 
+  });
 
   // ===============================
   // GET PRODUCTS
@@ -29,6 +44,7 @@ const AdminProducts = () => {
       const response = await axios.get(API_URL);
       if (response.data.success) {
         setProducts(response.data.products);
+        setFilteredProducts(response.data.products);
       }
     } catch (error) {
       console.log(error);
@@ -41,7 +57,104 @@ const AdminProducts = () => {
   }, []);
 
   // ===============================
-  // INPUT CHANGE
+  // APPLY FILTERS
+  // ===============================
+  useEffect(() => {
+    let result = [...products];
+
+    // Search by name
+    if (filters.search.trim()) {
+      result = result.filter((p) =>
+        p.product_name.toLowerCase().includes(filters.search.toLowerCase()),
+      );
+    }
+
+    // Filter by category
+    if (filters.category) {
+      result = result.filter((p) =>
+        p.category?.toLowerCase().includes(filters.category.toLowerCase()),
+      );
+    }
+
+    // Filter by min price
+    if (filters.minPrice) {
+      result = result.filter((p) => p.unit_price >= Number(filters.minPrice));
+    }
+
+    // Filter by max price
+    if (filters.maxPrice) {
+      result = result.filter((p) => p.unit_price <= Number(filters.maxPrice));
+    }
+
+    // Filter by status
+    if (filters.status) {
+      result = result.filter((p) => p.product_status === filters.status);
+    }
+
+    // Low Stock (stock < 5)
+    if (filters.stock_lt) {
+      result = result.filter(
+        (p) => p.stock_quantity < Number(filters.stock_lt),
+      );
+    }
+
+    // Discount greater than (discount > 10%)
+    if (filters.discount_gt) {
+      result = result.filter((p) => p.discount > Number(filters.discount_gt));
+    }
+
+    // Sorting
+    switch (filters.sortBy) {
+      case "price_low":
+        result.sort((a, b) => a.unit_price - b.unit_price);
+        break;
+      case "price_high":
+        result.sort((a, b) => b.unit_price - a.unit_price);
+        break;
+      case "name_asc":
+        result.sort((a, b) => a.product_name.localeCompare(b.product_name));
+        break;
+      case "name_desc":
+        result.sort((a, b) => b.product_name.localeCompare(a.product_name));
+        break;
+      case "stock_low":
+        result.sort((a, b) => a.stock_quantity - b.stock_quantity);
+        break;
+      default:
+        // newest (by id descending)
+        result.sort((a, b) => b.product_id - a.product_id);
+        break;
+    }
+
+    setFilteredProducts(result);
+  }, [filters, products]);
+
+  // ===============================
+  // HANDLE FILTER CHANGE
+  // ===============================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ===============================
+  // RESET FILTERS
+  // ===============================
+  const resetFilters = () => {
+    setFilters({
+      search: "",
+      category: "",
+      minPrice: "",
+      maxPrice: "",
+      status: "",
+      sortBy: "newest",
+      stock_lt: "", 
+      discount_gt: "", 
+    });
+  };
+
+  // ===============================
+  // INPUT CHANGE (FORM)
   // ===============================
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -172,13 +285,13 @@ const AdminProducts = () => {
   };
 
   // ===============================
-  // RENDER - আপগ্রেডেড ডিজাইন
+  // RENDER
   // ===============================
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* ================================= */}
-        {/* HEADER - প্রফেশনাল */}
+        {/* HEADER */}
         {/* ================================= */}
         <div className="mb-8 flex flex-col items-start justify-between gap-4 rounded-2xl bg-white/80 p-6 shadow-xl shadow-blue-500/5 backdrop-blur-sm md:flex-row md:items-center">
           <div>
@@ -208,14 +321,14 @@ const AdminProducts = () => {
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-full bg-blue-50 px-4 py-2 text-sm text-blue-700">
-            <span className="font-semibold">{products.length}</span>
+            <span className="font-semibold">{filteredProducts.length}</span>
             <span className="text-slate-400">|</span>
             <span>Total Products</span>
           </div>
         </div>
 
         {/* ================================= */}
-        {/* PRODUCT FORM - কার্ড ডিজাইন */}
+        {/* PRODUCT FORM */}
         {/* ================================= */}
         <div className="overflow-hidden rounded-2xl border border-white/50 bg-white shadow-2xl shadow-blue-500/10 transition-all hover:shadow-blue-500/20">
           <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/50 px-6 py-4">
@@ -521,19 +634,260 @@ const AdminProducts = () => {
           </form>
         </div>
 
+        {/* ============================================ */}
+        {/* FILTER SECTION - নতুন যোগ করা */}
+        {/* ============================================ */}
+        <div className="mt-8 overflow-hidden rounded-2xl border border-white/50 bg-white shadow-2xl shadow-blue-500/10">
+          <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 px-6 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-2 text-white shadow-lg shadow-indigo-500/30">
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  Filter & Search
+                </h2>
+                <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700">
+                  {filteredProducts.length} results
+                </span>
+              </div>
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-200 hover:text-slate-800"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Search */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  🔍 Search Product
+                </label>
+                <input
+                  type="text"
+                  name="search"
+                  value={filters.search}
+                  onChange={handleFilterChange}
+                  placeholder="Type product name..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  📂 Category
+                </label>
+                <input
+                  type="text"
+                  name="category"
+                  value={filters.category}
+                  onChange={handleFilterChange}
+                  placeholder="e.g. Food, Electronics"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                />
+              </div>
+
+              {/* Min Price */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  💰 Min Price
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    ৳
+                  </span>
+                  <input
+                    type="number"
+                    name="minPrice"
+                    value={filters.minPrice}
+                    onChange={handleFilterChange}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-8 pr-4 py-2.5 text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                  />
+                </div>
+              </div>
+
+              {/* Max Price */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  💰 Max Price
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    ৳
+                  </span>
+                  <input
+                    type="number"
+                    name="maxPrice"
+                    value={filters.maxPrice}
+                    onChange={handleFilterChange}
+                    placeholder="1000"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-8 pr-4 py-2.5 text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  📌 Status
+                </label>
+                <select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-slate-800 outline-none transition-all focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                >
+                  <option value="">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Sort By */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  🔄 Sort By
+                </label>
+                <select
+                  name="sortBy"
+                  value={filters.sortBy}
+                  onChange={handleFilterChange}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-slate-800 outline-none transition-all focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="price_low">Price: Low to High</option>
+                  <option value="price_high">Price: High to Low</option>
+                  <option value="name_asc">Name: A to Z</option>
+                  <option value="name_desc">Name: Z to A</option>
+                  <option value="stock_low">Stock: Low to High</option>
+                </select>
+              </div>
+
+              {/* Quick Filter Buttons - রিয়েল ওয়ার্ল্ড */}
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  ⚡ Quick Filters
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        minPrice: "100",
+                        maxPrice: "",
+                      }));
+                    }}
+                    className="rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700 transition-all hover:bg-blue-200"
+                  >
+                    ৳100+ (Premium)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        category: "food",
+                      }));
+                    }}
+                    className="rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-200"
+                  >
+                    🍔 Food Items
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        category: "electronics",
+                      }));
+                    }}
+                    className="rounded-full bg-purple-100 px-4 py-2 text-sm font-medium text-purple-700 transition-all hover:bg-purple-200"
+                  >
+                    💻 Electronics
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        status: "Active",
+                      }));
+                    }}
+                    className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 transition-all hover:bg-emerald-200"
+                  >
+                    ✅ Active Only
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        stock_lt: "5",
+                        discount_gt: "", // ক্লিয়ার করছি
+                      }));
+                    }}
+                    className="rounded-full bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-all hover:bg-red-200"
+                  >
+                    ⚠️ Low Stock
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        discount_gt: "10",
+                        stock_lt: "", // ক্লিয়ার করছি
+                      }));
+                    }}
+                    className="rounded-full bg-orange-100 px-4 py-2 text-sm font-medium text-orange-700 transition-all hover:bg-orange-200"
+                  >
+                    🏷️ Discount up to 10%
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ================================= */}
-        {/* PRODUCT TABLE - মডার্ন */}
+        {/* PRODUCT TABLE */}
         {/* ================================= */}
         <div className="mt-8 overflow-hidden rounded-2xl border border-white/50 bg-white shadow-2xl shadow-blue-500/10">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/50 px-6 py-4">
             <div>
               <h2 className="text-xl font-bold text-slate-800">All Products</h2>
               <p className="text-sm text-slate-500">
-                Showing {products.length} products
+                Showing {filteredProducts.length} of {products.length} products
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm text-blue-700">
-              <span className="font-bold">{products.length}</span>
+              <span className="font-bold">{filteredProducts.length}</span>
               <span>items</span>
             </div>
           </div>
@@ -554,7 +908,7 @@ const AdminProducts = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3 text-slate-400">
@@ -575,13 +929,13 @@ const AdminProducts = () => {
                           No products found
                         </span>
                         <span className="text-xs">
-                          Add your first product above
+                          Try adjusting your filters
                         </span>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  products.map((product) => (
+                  filteredProducts.map((product) => (
                     <tr
                       key={product.product_id}
                       className="transition-colors hover:bg-blue-50/40"
