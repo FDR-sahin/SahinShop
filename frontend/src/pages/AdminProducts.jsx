@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/products";
+const API_URL = "https://sahinshop-backend.onrender.com/api/products";
 
 const emptyForm = {
   product_name: "",
