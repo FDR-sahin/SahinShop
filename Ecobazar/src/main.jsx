@@ -1,28 +1,19 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom"; //test
+import { SearchProvider } from "./context/SearchContext";
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-      <BrowserRouter>
-       <App />
-      </BrowserRouter>
-   
+    <BrowserRouter>
+      <SearchProvider>
+        <App />
+      </SearchProvider>
+    </BrowserRouter>
   </StrictMode>,
-)
-
-
-
-
-
-
-
-
-
-
-
+);
 
 // import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // import CategoryPage from './pages/CategoryPage';
@@ -37,9 +28,6 @@ createRoot(document.getElementById('root')).render(
 //     </BrowserRouter>
 //   );
 // }
-
-
-
 
 // import React from 'react';
 // import { useParams } from 'react-router-dom';

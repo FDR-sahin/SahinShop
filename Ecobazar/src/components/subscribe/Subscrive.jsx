@@ -19,7 +19,7 @@ function Subscrive() {
           </div>
 
           <div className="md:flex md:flex-row flex-col items-center gap-3">
-            <div className="flex border border-zinc-300 border-r-0  items-center gap-2 md:w-[498px] w-[398px] h-[45px] bg-white  pl-3 rounded-3xl">
+            <div className="flex border border-zinc-300 border-r-0  items-center gap-2 md:w-[498px] w-[308px] h-[45px] bg-white  pl-3 rounded-3xl">
               <input
                 className=" outline-none w-full"
                 type="text"

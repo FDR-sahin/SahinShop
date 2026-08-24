@@ -42,8 +42,7 @@ function Testimonials() {
                            <FaStar  className='text-[#FF8A00] '/>
                            <FaStar  className='text-[#FF8A00] '/>
                            <FaStar  className='text-[#FF8A00] '/>
-                           <FaStar  className='text-[#FF8A00] '/>
-
+                          
                         </div>
                       </div>
                     </div>
